@@ -1,0 +1,90 @@
+@import url("https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+@import "tailwindcss";
+
+:root {
+  font-family: var(--font-body);
+  line-height: 1.5;
+  font-weight: 400;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --font-display: "Space Grotesk", "Segoe UI", sans-serif;
+  --font-body: "Public Sans", "Segoe UI", sans-serif;
+
+  --ink-900: #0f172a;
+  --ink-700: #334155;
+  --surface-50: #f8fafc;
+  --surface-100: #f1f5f9;
+  --surface-200: #e2e8f0;
+  --accent-500: #2563eb;
+  --accent-400: #60a5fa;
+  --accent-200: #bfdbfe;
+
+  --chart-1: #1d4ed8;
+  --chart-2: #0ea5e9;
+  --chart-3: #14b8a6;
+  --chart-4: #f59e0b;
+  --chart-cash: #10b981;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--surface-50);
+  color: var(--ink-900);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.bg-dashboard-grid {
+  background-image: linear-gradient(
+      90deg,
+      rgba(148, 163, 184, 0.14) 1px,
+      transparent 1px
+    ),
+    linear-gradient(180deg, rgba(148, 163, 184, 0.14) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.35;
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+@keyframes rise-fade {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal {
+  animation: rise-fade 0.6s ease-out both;
+}
+
+.reveal-delay-1 {
+  animation-delay: 0.12s;
+}
+
+.reveal-delay-2 {
+  animation-delay: 0.24s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-delay-1,
+  .reveal-delay-2 {
+    animation: none;
+  }
+}
