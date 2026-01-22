@@ -3,7 +3,6 @@ import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
 import { usePortfolioData } from './hooks/usePortfolioData';
 import { Header } from './components/Header';
-import { GrowthChart } from './components/GrowthChart';
 import { AddStockForm } from './components/AddStockForm';
 import { HoldingsTable } from './components/HoldingsTable';
 import { AllocationChart } from './components/AllocationChart';
@@ -406,8 +405,11 @@ function App() {
 
           {/* Sidebar (Right) */}
           <div className="space-y-6">
-            <AllocationChart stockValue={stockValue} cashValue={buyingPower} />
-            <GrowthChart history={history} />
+            <AllocationChart 
+                holdings={holdings} 
+                prices={prices} 
+                cashValue={buyingPower} 
+            />
           </div>
         </div>
       </div>
