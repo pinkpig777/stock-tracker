@@ -36,7 +36,7 @@ function App() {
       if (session) fetchUserData();
       else {
         setHoldings([]);
-        setBuyingPower(10000);
+        setBuyingPower(0);
         setHistory([]);
       }
     });
