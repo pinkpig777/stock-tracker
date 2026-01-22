@@ -1,16 +1,59 @@
-# React + Vite
+# Asset Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, secure, and beautiful dashboard to track your stock portfolio and asset allocation in real-time. Built with **React** and **Supabase**, featuring live market data powered by **Finnhub**.
 
-Currently, two official plugins are available:
+## ✨ Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Strict Authentication**: Secure Magic Link login via Supabase.
+- **Real-Time Data**: Live stock prices updated from Finnhub API.
+- **Smart Validation ("The Guard")**: Automatically validates stock symbols before adding them to your portfolio to prevent bad data.
+- **Asset Allocation V3**:
+    - **Visual Breakdown**: Interactive pie chart showing individual holdings.
+    - **Calculated Values**: Automatic calculation of stock values based on share count and live price.
+    - **Smart Colors**: Professional color palette for clear distinction.
+    - **Rich Legend**: Responsive legend (Side-by-side on Desktop, Stacked on Mobile) showing value and net worth %.
+- **Financial Overview**: Tracks Total Net Worth, Buying Power (Cash), and Daily Portfolio Value.
+- **Data Portability**: Full JSON Export and Import (Wipe & Replace) functionality for backup or migration.
+- **Responsive Design**: Fully optimized for Desktop and Mobile.
 
-## React Compiler
+## 🛠️ Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend**: React (Vite), Tailwind CSS, Recharts, Lucide React, React Hot Toast.
+- **Backend**: Supabase (PostgreSQL, Auth).
+- **API**: Finnhub.io (Stock Market Data).
+- **Tooling**: ESLint.
 
-## Expanding the ESLint configuration
+## 🚀 Setup & Installation
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1.  **Clone the repository**:
+    ```bash
+    git clone <repository_url>
+    cd asset-dashboard
+    ```
+
+2.  **Install Dependencies**:
+    ```bash
+    npm install
+    ```
+
+3.  **Environment Variables**:
+    Create a `.env` file in the root directory with the following keys:
+    ```env
+    VITE_SUPABASE_URL=your_supabase_url
+    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+    VITE_FINNHUB_API_KEY=your_finnhub_api_key
+    ```
+
+4.  **Run Locally**:
+    ```bash
+    npm run dev
+    ```
+
+## 📦 Deployment
+
+This project is ready for deployment on **Vercel** or **Netlify**.
+Ensure you add the environment variables in your deployment settings.
+
+## 📄 License
+
+MIT

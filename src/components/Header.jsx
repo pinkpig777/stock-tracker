@@ -44,7 +44,7 @@ export const Header = ({
             )}
           </div>
           <h1 className="font-display text-3xl font-semibold text-slate-900 md:text-4xl">
-            Stock-Tracker
+            Asset-Dashboard
           </h1>
           <p className="text-sm text-slate-500">
             Monitor live prices, cash balance, and growth over time.

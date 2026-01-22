@@ -290,7 +290,7 @@ function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `stock-tracker-v2-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `asset-dashboard-export-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
