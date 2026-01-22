@@ -1,118 +1,90 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { supabase } from './supabaseClient';
 import { usePortfolioData } from './hooks/usePortfolioData';
 import { Header } from './components/Header';
 import { GrowthChart } from './components/GrowthChart';
 import { AddStockForm } from './components/AddStockForm';
 import { HoldingsTable } from './components/HoldingsTable';
 import { AllocationChart } from './components/AllocationChart';
-
-const STORAGE_KEYS = {
-  holdings: 'stock-tracker.holdings',
-  buyingPower: 'stock-tracker.buyingPower',
-  history: 'stock-tracker.history',
-};
-
-const DEFAULT_HOLDINGS = [
-  { symbol: 'TSM', shares: 60 },
-  { symbol: 'NVDA', shares: 38 },
-  { symbol: 'GOOG', shares: 20 },
-];
-
-const DEFAULT_BUYING_POWER = 10000;
-
-const readStorage = (key) => {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  try {
-    const raw = window.localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
-  } catch (error) {
-    console.error('Failed to read storage:', error);
-    return null;
-  }
-};
-
-const writeStorage = (key, value) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  window.localStorage.setItem(key, JSON.stringify(value));
-};
-
-const normalizeHoldings = (input) => {
-  if (!Array.isArray(input)) {
-    return null;
-  }
-
-  return input
-    .map((item) => ({
-      symbol: typeof item?.symbol === 'string' ? item.symbol.trim().toUpperCase() : '',
-      shares: Number.parseFloat(item?.shares),
-    }))
-    .filter((item) => item.symbol && Number.isFinite(item.shares))
-    .map((item) => ({ ...item, shares: Math.max(0, item.shares) }));
-};
-
-const normalizeHistory = (input) => {
-  if (!Array.isArray(input)) {
-    return [];
-  }
-
-  return input
-    .map((entry) => ({
-      timestamp: Number(entry?.timestamp),
-      totalValue: Number(entry?.totalValue),
-    }))
-    .filter((entry) => Number.isFinite(entry.timestamp) && Number.isFinite(entry.totalValue));
-};
-
-const getInitialHoldings = () => {
-  const stored = normalizeHoldings(readStorage(STORAGE_KEYS.holdings));
-  return stored === null ? DEFAULT_HOLDINGS : stored;
-};
-
-const getInitialBuyingPower = () => {
-  const stored = readStorage(STORAGE_KEYS.buyingPower);
-  const parsed = Number.parseFloat(stored);
-  return Number.isFinite(parsed) ? parsed : DEFAULT_BUYING_POWER;
-};
-
-const getInitialHistory = () => normalizeHistory(readStorage(STORAGE_KEYS.history));
+import { Auth } from './components/Auth';
 
 function App() {
-  const [holdings, setHoldings] = useState(getInitialHoldings);
-  const [buyingPower, setBuyingPower] = useState(getInitialBuyingPower);
-  const [history, setHistory] = useState(getInitialHistory);
+  const [session, setSession] = useState(null);
+  const [holdings, setHoldings] = useState([]);
+  const [buyingPower, setBuyingPower] = useState(10000);
+  // Note: 'history' is currently session-only as per requirements (simplification), 
+  // but we could persist it if needed. For now keeping it local state.
+  const [history, setHistory] = useState([]); 
+  const [loadingConfig, setLoadingConfig] = useState(true);
+
   const lastSnapshotRef = useRef(null);
   const holdingsRef = useRef(holdings);
   const buyingPowerRef = useRef(buyingPower);
 
-  const symbolsKey = holdings.map((holding) => holding.symbol).join('|');
-  const handlePricesUpdate = useCallback((snapshot) => {
-    if (!snapshot || lastSnapshotRef.current === snapshot.timestamp) {
-      return;
-    }
+  // 1. Auth & Initial Load
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) fetchUserData();
+      setLoadingConfig(false);
+    });
 
-    const currentHoldings = holdingsRef.current;
-    const currentBuyingPower = buyingPowerRef.current;
-    const stockValue = currentHoldings.reduce((sum, holding) => {
-      const price = snapshot.prices[holding.symbol] || 0;
-      return sum + price * holding.shares;
-    }, 0);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) fetchUserData();
+      else {
+        setHoldings([]);
+        setBuyingPower(10000);
+        setHistory([]);
+      }
+    });
 
-    const total = stockValue + (Number.isFinite(currentBuyingPower) ? currentBuyingPower : 0);
-    if (!Number.isFinite(total)) {
-      return;
-    }
-
-    setHistory((prev) => [
-      ...prev,
-      { timestamp: snapshot.timestamp, totalValue: Math.round(total * 100) / 100 },
-    ]);
-    lastSnapshotRef.current = snapshot.timestamp;
+    return () => subscription.unsubscribe();
   }, []);
 
+  const fetchUserData = async () => {
+    try {
+      // Fetch Holdings
+      const { data: portfolioData, error: portfolioError } = await supabase
+        .from('portfolios')
+        .select('*');
+
+      if (portfolioError) throw portfolioError;
+
+      // Fetch Settings (Buying Power)
+      const { data: settingsData, error: settingsError } = await supabase
+        .from('user_settings')
+        .select('buying_power')
+        .single();
+      
+      // It's possible settings don't exist yet for new users
+      if (settingsError && settingsError.code !== 'PGRST116') {
+        console.error('Error fetching settings:', settingsError);
+      }
+
+      if (portfolioData) {
+        setHoldings(
+            portfolioData.map(item => ({
+                id: item.id,
+                symbol: item.symbol, 
+                shares: Number(item.shares) 
+            }))
+        );
+      }
+
+      if (settingsData) {
+        setBuyingPower(Number(settingsData.buying_power));
+      }
+
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
+  };
+
+  // 2. Data Sync
+  // Keep refs updated for the price socket callback
   useEffect(() => {
     holdingsRef.current = holdings;
   }, [holdings]);
@@ -120,6 +92,33 @@ function App() {
   useEffect(() => {
     buyingPowerRef.current = buyingPower;
   }, [buyingPower]);
+
+  // 3. Price Updates & History
+  const symbolsKey = holdings.map((holding) => holding.symbol).join('|');
+  
+  const handlePricesUpdate = useCallback((snapshot) => {
+    if (!snapshot || lastSnapshotRef.current === snapshot.timestamp) {
+      return;
+    }
+
+    const currentHoldings = holdingsRef.current;
+    const currentBuyingPower = buyingPowerRef.current;
+    
+    const stockValue = currentHoldings.reduce((sum, holding) => {
+      const price = snapshot.prices[holding.symbol] || 0;
+      return sum + price * holding.shares;
+    }, 0);
+
+    const total = stockValue + (Number.isFinite(currentBuyingPower) ? currentBuyingPower : 0);
+    
+    if (!Number.isFinite(total)) return;
+
+    setHistory((prev) => [
+      ...prev,
+      { timestamp: snapshot.timestamp, totalValue: Math.round(total * 100) / 100 },
+    ]);
+    lastSnapshotRef.current = snapshot.timestamp;
+  }, []);
 
   const { prices, loading, lastUpdated, error, refetch } = usePortfolioData(symbolsKey, {
     onPricesUpdate: handlePricesUpdate,
@@ -136,55 +135,190 @@ function App() {
 
   const totalValue = stockValue + (Number.isFinite(buyingPower) ? buyingPower : 0);
 
-  useEffect(() => {
-    writeStorage(STORAGE_KEYS.holdings, holdings);
-  }, [holdings]);
-
-  useEffect(() => {
-    writeStorage(STORAGE_KEYS.buyingPower, buyingPower);
-  }, [buyingPower]);
-
-  useEffect(() => {
-    writeStorage(STORAGE_KEYS.history, history);
-  }, [history]);
-
-  const handleAddStock = ({ symbol, shares }) => {
+  // 4. Actions
+  const handleAddStock = async ({ symbol, shares }) => {
     const safeShares = Number.isFinite(shares) ? Math.max(0, shares) : 0;
-    if (!symbol || safeShares <= 0) {
-      return;
-    }
+    if (!symbol || safeShares <= 0 || !session) return;
 
-    setHoldings((prev) => {
-      const existing = prev.find((holding) => holding.symbol === symbol);
-      if (existing) {
-        return prev.map((holding) =>
-          holding.symbol === symbol
-            ? { ...holding, shares: holding.shares + safeShares }
-            : holding
-        );
-      }
-      return [...prev, { symbol, shares: safeShares }];
-    });
+    // Optimistic Update
+    const existingIndex = holdings.findIndex(h => h.symbol === symbol);
+    let newHoldings = [...holdings];
+    
+    try {
+        if (existingIndex >= 0) {
+            // Update existing
+            const newShareCount = newHoldings[existingIndex].shares + safeShares;
+             // DB
+            const { error } = await supabase
+                .from('portfolios')
+                .update({ shares: newShareCount })
+                .eq('user_id', session.user.id)
+                .eq('symbol', symbol);
+            
+            if (error) throw error;
+            
+            newHoldings[existingIndex].shares = newShareCount;
+            setHoldings(newHoldings);
+
+        } else {
+            // Insert new
+            const { data, error } = await supabase
+                .from('portfolios')
+                .insert([{ user_id: session.user.id, symbol, shares: safeShares }])
+                .select()
+                .single();
+            
+            if (error) throw error;
+            
+            setHoldings(prev => [...prev, { id: data.id, symbol: data.symbol, shares: Number(data.shares) }]);
+        }
+    } catch (err) {
+        console.error("Error adding stock:", err);
+        alert("Failed to save stock. Please try again.");
+    }
   };
 
-  const handleUpdateShares = (symbol, value) => {
+  const handleUpdateShares = async (symbol, value) => {
+    if (!session) return;
     const parsed = Number.parseFloat(value);
     const nextShares = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
-    setHoldings((prev) =>
-      prev.map((holding) =>
-        holding.symbol === symbol ? { ...holding, shares: nextShares } : holding
-      )
-    );
+
+    try {
+        const { error } = await supabase
+            .from('portfolios')
+            .update({ shares: nextShares })
+            .eq('user_id', session.user.id)
+            .eq('symbol', symbol);
+
+        if (error) throw error;
+
+        setHoldings((prev) =>
+            prev.map((holding) =>
+                holding.symbol === symbol ? { ...holding, shares: nextShares } : holding
+            )
+        );
+    } catch (err) {
+        console.error("Error updating shares:", err);
+    }
   };
 
-  const handleRemoveStock = (symbol) => {
-    setHoldings((prev) => prev.filter((holding) => holding.symbol !== symbol));
+  const handleRemoveStock = async (symbol) => {
+    if (!session) return;
+    try {
+        const { error } = await supabase
+            .from('portfolios')
+            .delete()
+            .eq('user_id', session.user.id)
+            .eq('symbol', symbol);
+
+        if (error) throw error;
+
+        setHoldings((prev) => prev.filter((holding) => holding.symbol !== symbol));
+    } catch (err) {
+        console.error("Error removing stock:", err);
+    }
   };
 
-  const handleBuyingPowerChange = (value) => {
+  const handleBuyingPowerChange = async (value) => {
+    if (!session) return;
     const parsed = Number.parseFloat(value);
-    setBuyingPower(Number.isFinite(parsed) ? Math.max(0, parsed) : 0);
+    const newVal = Number.isFinite(parsed) ? Math.max(0, parsed) : 9;
+
+    try {
+        const { error } = await supabase
+            .from('user_settings')
+            .upsert({ user_id: session.user.id, buying_power: newVal });
+
+        if (error) throw error;
+        
+        setBuyingPower(newVal);
+    } catch (err) {
+        console.error("Error updating buying power:", err);
+    }
   };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  // 5. Import / Export Logic
+  const handleExport = () => {
+    const data = {
+        buyingPower,
+        holdings: holdings.map(h => ({ symbol: h.symbol, shares: h.shares }))
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `stock-tracker-export-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!window.confirm("WARNING: importing will DELETE all current data and replace it with the file contents. Are you sure?")) {
+        event.target.value = null; // Reset input
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (!Array.isArray(data.holdings) || typeof data.buyingPower !== 'number') {
+                throw new Error("Invalid Format");
+            }
+
+            // Batch Wipe & Replace
+            setLoadingConfig(true);
+
+            // 1. Delete all portfolios
+            await supabase.from('portfolios').delete().eq('user_id', session.user.id);
+            // 2. Insert new portfolios
+            const newPortfolios = data.holdings.map(h => ({
+                user_id: session.user.id,
+                symbol: h.symbol,
+                shares: h.shares
+            }));
+            
+            if (newPortfolios.length > 0) {
+                 await supabase.from('portfolios').insert(newPortfolios);
+            }
+
+            // 3. Update Buying Power
+            await supabase.from('user_settings').upsert({ 
+                user_id: session.user.id, 
+                buying_power: data.buyingPower 
+            });
+
+            // Reload
+            await fetchUserData();
+            event.target.value = null; // Reset input
+
+        } catch (err) {
+            console.error(err);
+            alert("Import failed. Check file format.");
+        } finally {
+            setLoadingConfig(false);
+        }
+    };
+    reader.readAsText(file);
+  };
+
+
+  if (loadingConfig) {
+     return <div className="flex min-h-screen items-center justify-center text-slate-500">Loading...</div>;
+  }
+
+  if (!session) {
+    return <Auth />;
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-100 text-slate-900">
@@ -200,6 +334,10 @@ function App() {
           lastUpdated={lastUpdated}
           loading={loading}
           onRefresh={refetch}
+          userEmail={session.user.email}
+          onLogout={handleLogout}
+          onExport={handleExport}
+          onImport={handleImport}
         />
 
         {error && (
