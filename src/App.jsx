@@ -27,9 +27,15 @@ function App() {
 
   // 1. Auth & Initial Load
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error("Error checking session:", error);
+      }
       setSession(session);
       if (session) fetchUserData();
+      setLoadingConfig(false);
+    }).catch(err => {
+      console.error("Critical Auth Error:", err);
       setLoadingConfig(false);
     });
 
@@ -37,8 +43,9 @@ function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) fetchUserData();
-      else {
+      if (session) {
+         fetchUserData();
+      } else {
         setHoldings([]);
         setBuyingPower(0);
         setHistory([]);
@@ -378,10 +385,10 @@ function App() {
           onImport={handleImport}
         />
 
-        {error && (
+        {usePortfolioError && (
             // This is just the general error from hooks, might be finnhub key missing
             <div className="rounded-2xl border border-amber-200/70 bg-amber-50/80 px-4 py-3 text-sm text-amber-900">
-                Data Error: {error}
+                Data Error: {usePortfolioError}
             </div>
         )}
 
