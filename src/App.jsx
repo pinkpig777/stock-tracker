@@ -370,7 +370,7 @@ function App() {
       <div className="pointer-events-none absolute -top-32 -left-24 h-72 w-72 rounded-full bg-gradient-to-br from-blue-200/70 via-sky-200/40 to-transparent blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 -right-16 h-96 w-96 rounded-full bg-gradient-to-br from-slate-200/90 via-blue-100/70 to-transparent blur-3xl" />
 
-      <div className="relative mx-auto flex min-h-screen max-w-7xl flex-col gap-8 px-4 pb-12 pt-8 md:px-6 md:pt-12">
+      <div className="relative mx-auto flex min-h-screen max-w-7xl flex-col gap-6 px-4 pb-10 pt-6 sm:px-5 sm:pb-12 sm:pt-8 md:gap-8 md:px-6 md:pt-12">
         <Header
           totalValue={totalValue}
           buyingPower={buyingPower}
@@ -391,26 +391,30 @@ function App() {
             </div>
         )}
 
-        <div className="grid gap-8 lg:grid-cols-3">
-          {/* Main Content (Left) */}
-          <div className="space-y-6 lg:col-span-2">
-            <HoldingsTable
-              holdings={holdings}
-              prices={prices}
-              onUpdateShares={handleUpdateShares}
-              onRemove={handleRemoveStock}
-            />
-             <AddStockForm onAdd={handleAddStock} />
-          </div>
-
-          {/* Sidebar (Right) */}
-          <div className="space-y-6">
+        <div className="flex flex-col gap-6 lg:grid lg:grid-cols-3 lg:gap-8">
+          
+          {/* Mobile: Chart appears first. Desktop: Sidebar (Chart) is on the right. */}
+          
+           {/* Sidebar Component (Chart + Form) */}
+          <div className="flex flex-col gap-6 order-1 lg:col-span-1 lg:order-2">
             <AllocationChart 
                 holdings={holdings} 
                 prices={prices} 
                 cashValue={buyingPower} 
             />
           </div>
+
+          {/* Main Content (Table + Form) */}
+          <div className="flex flex-col gap-6 order-2 lg:col-span-2 lg:order-1">
+             <AddStockForm onAdd={handleAddStock} />
+            <HoldingsTable
+              holdings={holdings}
+              prices={prices}
+              onUpdateShares={handleUpdateShares}
+              onRemove={handleRemoveStock}
+            />
+          </div>
+
         </div>
       </div>
     </div>

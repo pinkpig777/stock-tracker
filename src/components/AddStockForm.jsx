@@ -28,7 +28,7 @@ export const AddStockForm = ({ onAdd }) => {
   };
 
   return (
-    <section className="rounded-2xl border border-slate-200/70 bg-white/90 p-6 shadow-sm">
+    <section className="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="font-display text-lg font-semibold text-slate-900">Add Position</h3>
@@ -40,10 +40,10 @@ export const AddStockForm = ({ onAdd }) => {
 
       <form
         onSubmit={handleSubmit}
-        className="mt-4 flex flex-col gap-3 md:flex-row md:items-end"
+        className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4"
       >
-        <div className="flex-1">
-          <label className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+        <div className="space-y-2">
+          <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
             Symbol
           </label>
           <input
@@ -54,11 +54,11 @@ export const AddStockForm = ({ onAdd }) => {
               setError('');
             }}
             placeholder="AAPL"
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold uppercase text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold uppercase text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
           />
         </div>
-        <div className="flex-1">
-          <label className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+        <div className="space-y-2">
+          <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
             Shares
           </label>
           <input
@@ -72,12 +72,12 @@ export const AddStockForm = ({ onAdd }) => {
               setError('');
             }}
             placeholder="10"
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
           />
         </div>
         <button
           type="submit"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 sm:col-span-2 sm:w-auto sm:justify-self-end"
         >
           <Plus size={16} />
           Add Stock

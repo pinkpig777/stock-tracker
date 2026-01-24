@@ -49,15 +49,15 @@ export const AllocationChart = ({ holdings = [], prices = {}, cashValue = 0 }) =
 
   return (
 
-    <section className="flex flex-col rounded-2xl border border-slate-200/70 bg-white/90 p-8 shadow-sm">
-      <div className="mb-6 flex items-center justify-between">
+    <section className="flex flex-col rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm sm:p-6 lg:p-8">
+      <div className="mb-4 flex items-center justify-between sm:mb-6">
         <h3 className="font-display text-lg font-semibold text-slate-900">Allocation</h3>
         <span className="text-xs font-semibold text-slate-500">Asset Mix</span>
       </div>
 
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-6 sm:gap-8">
         {/* Chart Side */}
-        <div className="relative h-[260px] w-full">
+        <div className="relative h-[200px] w-full sm:h-[240px] lg:h-[260px]">
             {data.length ? (
                 <>
                 <ResponsiveContainer width="100%" height="100%">
@@ -66,8 +66,8 @@ export const AllocationChart = ({ holdings = [], prices = {}, cashValue = 0 }) =
                         data={data}
                         cx="50%"
                         cy="50%"
-                        innerRadius={65}
-                        outerRadius={90}
+                        innerRadius={58}
+                        outerRadius={82}
                         paddingAngle={5}
                         dataKey="value"
                         stroke="transparent"
@@ -86,7 +86,7 @@ export const AllocationChart = ({ holdings = [], prices = {}, cashValue = 0 }) =
                 {/* Center Label */}
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
                     <span className="text-[10px] uppercase tracking-[0.2em] text-slate-400">Total</span>
-                    <span className="font-display text-xl font-semibold text-slate-800">
+                    <span className="font-display text-lg font-semibold text-slate-800 sm:text-xl">
                     {currencyFormatter.format(total)}
                     </span>
                  </div>
@@ -99,16 +99,16 @@ export const AllocationChart = ({ holdings = [], prices = {}, cashValue = 0 }) =
         </div>
 
         {/* Legend Side */}
-        <div className="flex w-full flex-col gap-3">
+        <div className="flex w-full flex-col gap-3 max-h-64 overflow-y-auto pr-1 sm:max-h-none sm:overflow-visible sm:pr-0">
              {data.length > 0 ? (
                  data.map((item, index) => (
                     <div key={item.name} className="group flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/30 p-3 transition-all hover:bg-slate-50 hover:shadow-sm">
-                        <div className="flex items-center gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
                             <div 
                                 className="h-3 w-3 rounded-full ring-2 ring-white"
                                 style={{ backgroundColor: getFillColor(item, index) }} 
                             />
-                            <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900">{item.name}</span>
+                            <span className="truncate text-sm font-medium text-slate-600 group-hover:text-slate-900">{item.name}</span>
                         </div>
                         <div className="flex flex-col items-end">
                             <span className="font-display text-sm font-semibold text-slate-900">{currencyFormatter.format(item.value)}</span>
